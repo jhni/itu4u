@@ -1,0 +1,31 @@
+; $Id: CHANGELOG.txt,v 1.1.2.4 2009/12/20 21:26:23 hass Exp $
+
+sections 6.x-1.4, 2009/12/20
+----------------------------
+
+* #662370: Prevent the admin theme switching on block admin pages.
+
+sections 6.x-1.3, 2009/12/16
+----------------------------
+
+* Remove useless section selection item in node form.
+* #492692: Add section variable to page template.
+* #636908: Fixed theme switch failure.
+* Added hook_enabled/disabled for admin theme settings take over.
+* Changed user access logic in node forms
+* Fixed documentation typos
+* Theme switcher moved to extra function
+* Added more template suggestions.
+* Refactor template suggestion to remove duplicate code.
+* New default "Administration theme" section
+  - Migrate core setting to section
+  - Disabled core settings form
+* #396190 by hass: Call to undefined function _sections_theme_select() in sections.module on line 105
+* Added node specific themes
+* Exit looping in _sections_in_section() if section with highest weight match.
+* Readme update for template suggestion of nodes and blocks.
+* #361987 by hass: $visibility settings check should use isset()
+* Added template suggestion for nodes and blocks.
+* Un-t'ify schema strings. Follow core (#332123).
+* #340044 by hass: Prevent WYSIWYG editors attaching to textarea
+* #292049: Added Swedish translation by emok and ztyx

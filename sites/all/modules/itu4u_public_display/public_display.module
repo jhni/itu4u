@@ -1,0 +1,151 @@
+<?php
+// $Id$
+/**
+* @file
+* Public Display
+*/
+
+/*******************************************************************************
+* Renders the public display of airnotes
+******************************************************************************/
+/**
+* Valid permissions for this module
+* @return array An array of valid permissions for the public_display module
+*/
+
+function public_display_perm() {
+    return array('administer public_display', 'access public_display content');
+} // function public_display_perm()
+
+/**
+* Menu for this module
+* @return array An array with this module's settings.
+*/
+function public_display_menu() {
+    $items = array();
+    
+    //Link to the public_display admin page:
+    $items['display/blipzone/%'] = array(
+        'title' => 'itu4u.com',
+        'page arguments' => array(2),
+        'description' => 'Render the public display',
+        'page callback' => 'public_display_render',
+        'access arguments' => array('access content'),
+        'type' => MENU_NORMAL_ITEM,
+    );
+    
+    //Link to the public_display admin page:
+    $items['display/read/%'] = array(
+        'title' => 'Public Display Read',
+        'page arguments' => array(2),
+        'description' => 'increase the number of time a node has been displayed',
+        'page callback' => 'public_display_read',
+        'access arguments' => array('access content'),
+        'type' => MENU_NORMAL_ITEM,
+    );
+    
+    return $items;
+}
+
+/**
+* little helper funciton. Use convention over configuration, and assume the js files are, well, in the js directory :)
+*/
+function add_js($fName) {
+	drupal_add_js( drupal_get_path('module', 'public_display') . '/js/' . $fName . '.js', 'header' );
+}
+
+/**
+* Test Module Messages
+* @return array An array of form data.
+*/
+function public_display_render($zone) {
+
+	drupal_add_css(drupal_get_path('module', 'public_display') . '/css/public_display.css');
+	drupal_add_js('var blipzone = "'.$zone.'";','inline');
+	//drupal_add_js('var zindex = -2147483648;','inline');
+
+	drupal_add_js('var zindex = 0;','inline'); 
+
+		
+	drupal_add_js(drupal_get_path('module', 'public_display').'/js/jquery.timers.js','header');
+
+
+	/*
+	* How to display users?
+	* 1) add the eventbus js
+	* 2) create a js file where the list of user is tracked, using as subscription:
+	*	{zone.current: *, zone.previous: *, user: *}
+	* then just check: if zone.current == zone && user not in displayed then add user in displayed
+	* else if zone.previous == zone && user in displayed then remove user from displayed
+	* Alternatively, just add 2 subscription:
+	* userAdd: {zone.current: zone, user: *}
+	* userRem: {zone.previous: zone, user: *}
+	* of course the check are always valid (e.g. must check is user is already displayed, etc)
+	* 3) link also the js file, perhaps modify the public_display one?
+	*/
+	//needs js: /org/[cometd], /org/cometd/[AckExtension,ReloadExtension,TimeStampExtension,TimeSyncExtension], jquery.cometd, jquery.json-2.2
+//	drupal_add_js(drupal_get_path('module', 'public_display').'/js/public_display.js','header');
+	
+	
+	
+	If($zone != "all"){
+	
+	
+		// Uncomment for the event verison 
+	
+		add_js('org/cometd');
+		add_js('org/cometd/AckExtension');
+		add_js('org/cometd/ReloadExtension');
+		add_js('org/cometd/TimeStampExtension');
+		add_js('org/cometd/TimeSyncExtension');
+		add_js('jquery.cometd');
+		add_js('jquery.json-2.2');
+		add_js('eventbus');
+		add_js('evented_public_display');
+	
+	
+	//	add_js('public_display');
+	
+	}else {
+	
+		add_js('display_latest');
+	}
+	
+	add_js('slideshow');
+	
+    $page_content = '<img id="qrcode" src="http://itu4u.com/bt.png" /><div id="devices"></div>';
+    return $page_content;
+}
+
+function public_display_read($nodeid){
+
+	// Loading the node.
+	$node = node_load($nodeid); 	
+	
+	if($node){	
+		$tmp = $node->field_displayed[0][value] + 1;
+		$page_content = (string)$tmp;
+
+
+		print_r($node);
+
+		// Change node
+		$node->field_displayed[0][value] = $tmp;
+		$node->field_last[0][value] = time();
+
+		// Saving the node.
+		//node_validate($node);
+		if ($errors = form_get_errors()){
+        	print_r($errors);
+		}
+		$node_to_save = node_submit($node);
+		node_save($node_to_save);
+
+	}else{
+		$page_content = "Node not found";
+	}
+	
+    return $page_content;
+}
+
+?>

@@ -1,0 +1,322 @@
+<?php
+// $Id: sections.module,v 1.21.2.27 2009/12/20 21:23:05 hass Exp $
+
+/**
+ * @file
+ * Allows you to define sections of your site and apply themes to those sections.
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+function sections_help($path, $arg) {
+  switch ($path) {
+    case 'admin/modules#description':
+      return t('Allows you to define sections of your site and apply themes to those sections.');
+  }
+}
+
+/**
+ * Implementation of hook_perm().
+ *
+ * Since the access to our new custom pages will be granted based on
+ * special permissions, we need to define what those permissions are here.
+ * This ensures that they are available to enable on the user role
+ * administration pages.
+ */
+function sections_perm() {
+  return array('administer sections', 'assign node theme');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function sections_menu() {
+  $access = array('administer sections');
+
+  $items['admin/build/sections'] = array(
+    'title' => 'Sections',
+    'description' => 'Define sections of your site and apply themes to them.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sections_admin_display_form'),
+    'access arguments' => $access,
+    'file' => 'sections.admin.inc',
+    'type' => MENU_NORMAL_ITEM
+  );
+  $items['admin/build/sections/list'] = array(
+    'title' => 'List',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sections_admin_display_form'),
+    'access arguments' => $access,
+    'weight' => -10,
+    'file' => 'sections.admin.inc',
+    'type' => MENU_DEFAULT_LOCAL_TASK
+  );
+  $items['admin/build/sections/add'] = array(
+    'title' => 'Add section',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sections_admin_settings_form'),
+    'access arguments' => $access,
+    'file' => 'sections.admin.inc',
+    'type' => MENU_LOCAL_TASK
+  );
+  $items['admin/build/sections/edit/%section'] = array(
+    'title' => 'Edit section',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sections_admin_settings_form', 4),
+    'access arguments' => $access,
+    'file' => 'sections.admin.inc',
+    'type' => MENU_CALLBACK
+  );
+  $items['admin/build/sections/delete/%section'] = array(
+    'title' => 'Delete section',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sections_delete_form', 4),
+    'access arguments' => $access,
+    'file' => 'sections.admin.inc',
+    'type' => MENU_CALLBACK
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function sections_form_alter(&$form, $form_state, $form_id) {
+  // Add theme selection option to node forms.
+  if (isset($form['type']) && isset($form['#node']) && $form['type']['#value'] .'_node_form' == $form_id && user_access('assign node theme')) {
+    $node = $form['#node'];
+    $form['sections'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Theme configuration'),
+      '#collapsible' => TRUE,
+      '#collapsed' => !$node->sections['theme'],
+      '#tree' => TRUE,
+      '#weight' => 30,
+      '#description' => t('This setting allows you to create a section per node. A node section will get the highest weight and take precedence about all other inheriting sections.')
+    );
+    $form['sections']['theme'] = array(
+      '#type' => 'select',
+      '#title' => t('Select theme'),
+      '#default_value' => $node->sections['theme'],
+      '#options' => _sections_theme_select(),
+      '#description' => t('Select the theme you want to use for this node. Disabled themes are not used until they are enabled on <a href="@url">themes</a> page.', array('@url' => url('admin/build/themes')))
+    );
+  }
+
+  // Disable core Administration theme.
+  if ($form_id == 'system_admin_theme_settings') {
+    // TODO: If other modules like theme_settings add form items, these items are not disabled.
+    $form['admin_theme']['#disabled'] = TRUE;
+    $form['node_admin_theme']['#disabled'] = TRUE;
+    drupal_set_message(t('The configuration options have been disabled for compatibility reasons with the sections module. Configure the administration theme via <a href="@sections-admin">sections</a>.', array('@sections-admin' => url('admin/build/sections'))), 'warning', FALSE);
+  }
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ *
+ * Manages section information for nodes.
+ */
+function sections_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  switch ($op) {
+    case 'delete':
+      // Node has been deleted. Remove node theme reference.
+      db_query('DELETE FROM {sections_nodes} WHERE nid = %d', $node->nid);
+      break;
+
+    case 'insert':
+      // Save new node with configured theme setting.
+      if (!empty($node->sections['theme'])) {
+        db_query("INSERT INTO {sections_nodes} (nid, theme) VALUES (%d, '%s')", $node->nid, $node->sections['theme']);
+      }
+      break;
+
+    case 'load':
+      $node->sections['theme'] = db_result(db_query("SELECT theme FROM {sections_nodes} WHERE nid = %d", $node->nid));
+      break;
+
+    case 'update':
+      $theme = db_result(db_query("SELECT theme FROM {sections_nodes} WHERE nid = %d", $node->nid));
+      // Update existing node theme setting.
+      if ($theme && !empty($node->sections['theme'])) {
+        db_query("UPDATE {sections_nodes} SET theme = '%s' WHERE nid = %d", $node->sections['theme'], $node->nid);
+      }
+      // Insert new node theme setting, if node already exists.
+      elseif (!empty($node->sections['theme'])) {
+        db_query("INSERT INTO {sections_nodes} (nid, theme) VALUES (%d, '%s')", $node->nid, $node->sections['theme']);
+      }
+      // Node theme has been disabled. Remove from sections_nodes table.
+      elseif ($theme && empty($node->sections['theme'])) {
+        db_query('DELETE FROM {sections_nodes} WHERE nid = %d', $node->nid);
+      }
+      break;
+
+    case 'view':
+      // TODO: Only switch the theme if the node is viewed as page and not in teaser mode.
+
+      // If node specific theme is configured, switch to node theme.
+      if (!empty($node->sections['theme'])) {
+        _sections_switch_theme($node->sections['theme']);
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_theme()
+ */
+function sections_theme() {
+  return array(
+    'sections_admin_display_form' => array(
+      'file' => 'sections.admin.inc',
+      'arguments' => array('form' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_init().
+ */
+function sections_init() {
+  if ($section = _sections_in_section()) {
+    _sections_switch_theme($section->theme);
+  }
+}
+
+/**
+ * Menu helper function to verify if section exists.
+ */
+function section_load($section) {
+  return db_fetch_object(db_query("SELECT * FROM {sections_data} WHERE sid = %d", $section));
+}
+
+/**
+ * Loads the options for the themes select form element.
+ */
+function _sections_theme_select() {
+  $options = array();
+
+  $options[0] = '<'. t('System default') .'>';
+  foreach (list_themes() as $key => $theme) {
+    $options[$theme->name] = t('@name (@status)', array('@name' => $theme->name, '@status' => ($theme->status ? t('Enabled') : t('Disabled'))));
+  }
+  return $options;
+}
+
+/**
+ * Change the current theme to a custom theme.
+ *
+ * @param $theme
+ *   The theme_key of the custom theme that should be used.
+ */
+function _sections_switch_theme($theme_key = NULL) {
+  if (!empty($theme_key)) {
+    // Only switch to custom theme if theme is active, to prohibit a destroyed site.
+    foreach (list_themes() as $key => $theme) {
+      if ($theme->status == 1 && $theme->name == $theme_key) {
+        global $custom_theme;
+        $custom_theme = $theme_key;
+        init_theme();
+      }
+    }
+  }
+}
+
+/**
+ * An API for modules that want to know about sections.
+ *
+ * This API is a function that lets you find out about settings.
+ *
+ * @param
+ *  Optional $setting a string containing the section you what to test against.
+ *
+ * @return
+ *   Depends on the parameter.
+ *   If you do not give $section, it will return the section object, if found.
+ *   If you give $section, it will return TRUE if you are in that section
+ *   Otherwise it will return FALSE
+ */
+function _sections_in_section($section = NULL) {
+  global $user;
+
+  if (is_string($section)) {
+    // Caller wants to know if shes in the section she provided.
+    if ($section == _sections_in_section()) {
+      return TRUE;
+    }
+  }
+  else {
+    // Caller wants to know in which section she is.
+    $rids = array_keys($user->roles);
+    $res = db_query(db_rewrite_sql('SELECT DISTINCT s.* FROM {sections_data} s LEFT JOIN {sections_roles} r ON s.sid = r.sid WHERE s.status = 1 AND (r.rid IN ('. db_placeholders($rids) .') OR r.rid IS NULL) ORDER BY s.weight', 's', 'sid'), $rids);
+    while ($row = db_fetch_object($res)) {
+      if ($row->visibility < 2) {
+        $path = drupal_get_path_alias($_GET['q']);
+        // Compare with the internal and path alias (if any).
+        $page_match = drupal_match_path($path, $row->path);
+        if ($path != $_GET['q']) {
+          $page_match = $page_match || drupal_match_path($_GET['q'], $row->path);
+        }
+        // When $row->visibility has a value of 0, the block is displayed on
+        // all pages except those listed in $row->path. When set to 1, it
+        // is displayed only on those pages listed in $row->path. Prevent
+        // the admin theme switching on block admin pages.
+        if ($page_match = !($row->visibility xor $page_match) && !(drupal_match_path($path, "admin/build/block\nadmin/build/block/list/*"))) {
+          return $row;
+        }
+      }
+      else {
+        if (drupal_eval($row->path)) {
+          return $row;
+        }
+      }
+    }
+  }
+
+  // No section has been found, return FALSE.
+  return FALSE;
+}
+
+/**
+ * Implementation of hook_preprocess().
+ */
+function sections_preprocess(&$variables, $hook) {
+  // Are we in a section?
+  if ($section = _sections_in_section()) {
+    // Clean up the section names for template file names.
+    $filter = '![^abcdefghijklmnopqrstuvwxyz0-9-_]+!s';
+    $name_clean = preg_replace($filter, '-', drupal_strtolower($section->name));
+
+    // Add some section information to all preprocess hooks.
+    $variables['section'] = array(
+      'sid' => $section->sid,
+      'theme' => $section->theme,
+      'name_clean' => $name_clean,
+    );
+
+    switch ($hook) {
+      case 'page':
+        // Add template suggestions for page templates.
+        $variables['template_files'][] = 'page-sections';
+        $variables['template_files'][] = 'page-sections-'. $section->sid;
+        $variables['template_files'][] = 'page-sections-'. $name_clean;
+        break;
+
+      case 'node':
+        // Add template suggestions for node templates.
+        $variables['template_files'][] = 'node-sections';
+        $variables['template_files'][] = 'node-sections-'. $section->sid;
+        $variables['template_files'][] = 'node-sections-'. $name_clean;
+        break;
+
+      case 'block':
+        // Add template suggestions for block templates.
+        $variables['template_files'][] = 'block-sections';
+        $variables['template_files'][] = 'block-sections-'. $section->sid;
+        $variables['template_files'][] = 'block-sections-'. $name_clean;
+        break;
+    }
+  }
+}

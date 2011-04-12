@@ -1,0 +1,80 @@
+<?php
+
+// $Id: userpoints_node_action.install,v 1.1.6.2 2009/10/11 16:18:37 billymg Exp $
+
+/**
+ * Implementation of hook_schema().
+ */
+function userpoints_node_action_schema() {
+  $schema = array();
+  $schema['userpoints_node_action'] = array(
+    'description' => t('Holds rules for node publishing options with userpoints'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('Auto-incrementing ID'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'disp-width' => '10',
+      ),
+      'role_id' => array(
+        'description' => t('ID of the role for the rule'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'disp-width' => '10',
+        'default' => 0,
+      ),
+      'pubtype' => array(
+        'description' => t('Node type of the rule'),
+        'type' => 'varchar',
+        'length' => '64',
+        'not null' => TRUE,
+        'default' => "",
+      ),
+      'action' => array(
+        'description' => t('Publishing action of the rule'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'category' => array(
+        'description' => t('Category of points for the rule'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'disp-width' => '10',
+        'default' => 0,
+      ),
+      'points' => array(
+        'description' => t('Amount of points for the rule'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'disp-width' => '10',
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function userpoints_node_action_install() {
+  // Create tables
+  drupal_install_schema('userpoints_node_action');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function userpoints_node_action_uninstall() {
+  // Drop tables
+  drupal_uninstall_schema('userpoints_node_action');
+}

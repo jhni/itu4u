@@ -1,0 +1,7 @@
+; $Id$
+name = Public Display
+description = Renders the public display
+core = 6.x
+
+package = "ITU4U"
+version = "6.x-0.1-dev"

@@ -1,0 +1,6 @@
+; $Id$
+name = ITU4U Core
+description = Contains core functionality 
+core = 6.x
+package = "ITU4U"
+version = "6.x-0.1-dev"

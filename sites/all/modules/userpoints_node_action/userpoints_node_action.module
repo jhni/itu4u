@@ -1,0 +1,203 @@
+<?php
+
+// $Id: 
+
+/**
+ * @file
+ * This module allows admins to configure rules for user roles to have to pay userpoints to change the status options of certain node types.
+ * Example: All users with a given role such as "advertiser" could have to pay 10 userpoints to publish their ad, and an additional 20 to make it sticky.
+ */
+ 
+/**
+ * Implementation of hook_help().
+ */ 
+function userpoints_node_action_help($path, $arg) {
+  if ($path == 'admin/settings/userpoints_node_action' ) {
+    return (t('This module allows admins to configure rules for user roles to have to pay !points to change the status options of certain node types.<br/>Example: All users with a given role such as "advertiser" could have to pay 10 !points to publish their ad, and an additional 20 to make it sticky. It does not cost users to unset these actions though (seems like a very unnecessary use case), so it\'s free to unpublish or unsticky a node.', userpoints_translation()));
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function userpoints_node_action_menu() {
+  $items = array ();
+  $items['admin/settings/userpoints_node_action'] = array (
+    'title' => t('!Points Node Action', userpoints_translation()),
+    'description' => t('Settings for the !points cost of performing certain node actions per role.', userpoints_translation()),
+    'page callback' => 'userpoints_node_action_admin',
+    'access arguments' => array('admin userpoints'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
+ * Admin menu
+ */
+function userpoints_node_action_admin() {
+  $arg3 = arg(3);
+  $arg4 = arg(4);
+  // Arguments to delete something
+  if (!empty($arg3) && !empty($arg4) && $arg3 == 'delete' && is_numeric($arg4)) {
+    userpoints_node_action_admin_delete_rule($arg4);
+  }
+  include_once('userpoints_node_action.inc');
+  $output = drupal_get_form('userpoints_node_action_admin_add_form') . drupal_get_form('userpoints_node_action_admin_message_form') . drupal_get_form('userpoints_node_action_admin_modify_form');
+  return $output;
+}
+
+function userpoints_node_action_theme() {
+  $themes = array(
+    'userpoints_node_action_admin_modify_form' => array(
+      'arguments' => array('form'),
+      'function' => 'theme_userpoints_node_action_admin_modify_form',
+    ),
+  );
+  return $themes;
+}
+
+/**
+ * Function for deleting a rule
+ */
+function userpoints_node_action_admin_delete_rule($id) {
+  $q = "DELETE FROM {userpoints_node_action} WHERE id = %d";
+  db_query($q, $id);
+  drupal_set_message(t('Rule deleted succesfully'));
+  drupal_goto('admin/settings/userpoints_node_action');
+}
+
+/** 
+ * Validate the points field form for the forms
+ */
+function userpoints_node_action_validate_points($item) {
+  $num = $item['#value'];
+  if (!is_numeric($num) || intval($num) <= 0 || ($num != intval($num))) {
+    form_set_error($item['#name'], t('!Points must be a non-negative integer greater than 0', userpoints_translation()));
+  }
+}
+
+/** 
+ * Validate the form for new rules (see if the rule already exists)
+ */
+function userpoints_node_action_admin_add_form_validate($form, $form_state) {
+  $q = "SELECT COUNT(*) AS 'count' FROM {userpoints_node_action} WHERE role_id = '%d' AND action = %d AND pubtype = '%s' AND category = %d";
+  $result = db_result(db_query ($q, $form_state['values']['role'], $form_state['values']['action'], $form_state['values']['pubtype'], $form_state['values']['category']));
+  if (intval($result) > 0) {
+    form_set_error('title', t('This rule already exists. If you want to change the amount of !points, edit it using the modify form instead of creating a new one', userpoints_translation()));
+  }
+}
+
+/** 
+ * Saving the form for new rules
+ */
+function userpoints_node_action_admin_add_form_submit($form, $form_state) {
+  $q = "INSERT INTO {userpoints_node_action} (role_id , action, pubtype, category, points) VALUES ('%d', '%d', '%s', '%d', '%d')";
+  db_query($q, $form_state['values']['role'], $form_state['values']['action'], $form_state['values']['pubtype'], $form_state['values']['category'], $form_state['values']['points']);
+  drupal_set_message(t('Rule saved succesfully'));
+}
+
+/**
+ * Saving the message form
+ */
+function userpoints_node_action_admin_message_form_submit($form, $form_state) {
+  variable_set('userpoints_node_action_display_messages', $form_state['values']['display']);
+  variable_set('userpoints_node_action_custom_message', $form_state['values']['customMessage']);
+}
+
+/**
+ * Implementation of hook_node_type
+ * Delete all rules related to the node type being deleted
+ */
+function userpoints_node_action_node_type ($op, $type) {
+  if ($op == 'delete') {
+    $q = "SELECT COUNT(*) AS count FROM {userpoints_node_action} WHERE pubtype = '%s'";
+    $counter = db_fetch_object(db_query($q, $type->type))->count;
+    if ($counter > 0) {
+      $q = "DELETE FROM {userpoints_node_action} WHERE pubtype = '%s'";
+      $result = db_query($q, $type->type);
+      if ($result) {
+        drupal_set_message(sprintf(t('%d "!points node action" rules deleted.', userpoints_translation()), $counter));
+      }
+    }
+  }
+}
+
+/**
+ * Saving the modifications on existant rules
+ */
+function userpoints_node_action_admin_modify_form_submit($form, $form_state) {
+  $rows = $form_state['values']['modify'];
+  foreach($rows as $row) {
+    $q = "SELECT COUNT(*) AS 'count' FROM {userpoints_node_action} WHERE role_id = %d AND pubtype = '%s' AND action = %d AND category = %d AND id <> %d";
+    $count = db_result(db_query($q, $row['role'], $row['pubtype'], $row['action'], $row['category'], $row['id']));
+    if ($count > 0) {
+      drupal_set_message(t('A change was not saved because there were duplicates found: duplicate rules can result in less predictable behavior, delete a rule and make a new one if necessary'));
+    } else {
+      $q = "UPDATE {userpoints_node_action} SET role_id = %d, pubtype = '%s', action = %d, category = %d, points = %d WHERE id = %d";
+      db_query($q, $row['role'], $row['pubtype'], $row['action'], $row['category'], $row['points'], $row['id']);
+    }
+  }
+  drupal_set_message(t('Rules updated.'));
+}
+
+function userpoints_node_action_nodeapi($node, $op, $form = null) {
+  include_once ('userpoints_node_action.inc');
+  global $user;
+  if (empty($node->nid)) {
+    $account = $user;
+  } else {
+    $account = user_load(array('uid' => $node->uid));
+  }
+  if ($op == "validate") {
+    // Must aggregate cost, if they can't do all, don't do any
+    $totalCost = array();
+    $options = _userpoints_node_action_get_actions(true);
+    foreach($options as $actionID => $codeName) {
+      $longName = "override_publishing_".$codeName;
+      if ($node->$codeName == 1 || (!empty($node->$longName) && $node->$longName == 1)) {
+        // Users shouldn't have to pay again if they're just editing the node, and didn't change the action.
+        if (_userpoints_node_action_has_status_changed($node->nid, $codeName)) {
+          $status = _get_userpoints_node_action_status($account, $node->type, $actionID, $totalCost);
+          if (!empty($status)) {
+            form_set_error('options');
+            // Display the custom message if it is set
+            $custom_message = userpoints_node_action_translate_message();
+            if($custom_message != '') {
+              form_set_error('options_custom_message', $custom_message);
+            }
+            $default_display = variable_get('userpoints_node_action_display_messages', true);
+            foreach($status as $k => $s) {
+              // A little odd, but we want to uniquely make sure each error gets set, even if we don't have an element to set it against
+              // Is there a better way to do this?
+              if($default_display) {
+                form_set_error('options'.$s, $s);
+              }
+            }
+          }
+        }
+      }
+    }
+  } else if ($op == "presave") {
+    $options = _userpoints_node_action_get_actions(true);
+    foreach($options as $actionID => $codeName) {
+      $longName = "override_publishing_".$codeName;
+      if ($node->$codeName == 1 || (!empty($node->$longName) && $node->$longName == 1)) {
+        // But again, users shouldn't pay again if they're just editing the node, and didn't change the action.
+        if (_userpoints_node_action_has_status_changed($node->nid, $codeName)) {
+          $result = _userpoints_node_action_payment($account, $node->type, $actionID);
+          // They should have enough points by now, but we can undo settings if it doesn't work.
+          if (!empty($result)) {
+            foreach($result as $r) {
+              if ($r['status'] == false) {
+                drupal_set_message($r['reason']);
+                $node->$codeName = 0;
+                $node->$longName = 0;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

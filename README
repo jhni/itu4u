@@ -1,0 +1,6 @@
+Import the Database in the file: itu4u.sql.gz
+Set the DB login and password in the file /sites/default/settings.php
+
+Admin user
+Login: user@domain.com
+Password: itu4u

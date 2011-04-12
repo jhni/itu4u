@@ -1,0 +1,11 @@
+; $Id: sections.info,v 1.3.2.2 2007/11/17 20:49:40 hass Exp $
+name = Sections
+description = "Allows you to define sections of your site and apply themes to those sections."
+core = 6.x
+
+; Information added by drupal.org packaging script on 2009-12-20
+version = "6.x-1.4"
+core = "6.x"
+project = "sections"
+datestamp = "1261344671"
+

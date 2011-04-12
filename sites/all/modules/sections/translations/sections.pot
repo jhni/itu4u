@@ -1,0 +1,218 @@
+# $Id: sections.pot,v 1.2.2.6 2009/12/14 21:19:41 hass Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  sections.admin.inc,v 1.3.2.16 2009/12/13 11:52:17 hass
+#  sections.module,v 1.21.2.26 2009/12/14 21:09:44 hass
+#  sections.info,v 1.3.2.2 2007/11/17 20:49:40 hass
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2009-12-14 22:11+0100\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: sections.admin.inc:20
+msgid "Section settings"
+msgstr ""
+
+#: sections.admin.inc:24
+msgid "Name"
+msgstr ""
+
+#: sections.admin.inc:28
+msgid "Give the name of the section."
+msgstr ""
+
+#: sections.admin.inc:32;230 sections.module:203
+msgid "Enabled"
+msgstr ""
+
+#: sections.admin.inc:34
+msgid "Enable or disable this section."
+msgstr ""
+
+#: sections.admin.inc:38 sections.module:101
+msgid "Select theme"
+msgstr ""
+
+#: sections.admin.inc:41
+msgid "Select the theme you want to use for this section. Disabled themes are not used until they are enabled on <a href=\"@url\">themes</a> page."
+msgstr ""
+
+#: sections.admin.inc:45;232
+msgid "Weight"
+msgstr ""
+
+#: sections.admin.inc:62
+msgid "Role specific visibility settings"
+msgstr ""
+
+#: sections.admin.inc:67
+msgid "Show section for specific roles"
+msgstr ""
+
+#: sections.admin.inc:70
+msgid "Show this section only for the selected role(s). If you select no roles, the section will be visible to all users. If a user has any of the roles checked, the section will be visible for this user."
+msgstr ""
+
+#: sections.admin.inc:76
+msgid "Page specific visibility settings"
+msgstr ""
+
+#: sections.admin.inc:89
+msgid "Show on every page except the listed pages."
+msgstr ""
+
+#: sections.admin.inc:89
+msgid "Show on only the listed pages."
+msgstr ""
+
+#: sections.admin.inc:90
+msgid "Enter one page per line as Drupal paths. The '*' character is a wildcard. Example paths are %blog for the blog page and %blog-wildcard for every personal blog. %front is the front page."
+msgstr ""
+
+#: sections.admin.inc:93
+msgid "Show if the following PHP code returns <code>TRUE</code> (PHP-mode, experts only)."
+msgstr ""
+
+#: sections.admin.inc:94
+msgid "If the PHP-mode is chosen, enter PHP code between %php. Note that executing incorrect PHP-code can break your Drupal site."
+msgstr ""
+
+#: sections.admin.inc:98
+msgid "Activate section on the specific pages"
+msgstr ""
+
+#: sections.admin.inc:104
+msgid "Pages"
+msgstr ""
+
+#: sections.admin.inc:113
+msgid "Edit section %name"
+msgstr ""
+
+#: sections.admin.inc:120
+msgid "Save"
+msgstr ""
+
+#: sections.admin.inc:126;129 sections.module:56
+msgid "Add section"
+msgstr ""
+
+#: sections.admin.inc:142;152;270
+msgid "The sections configuration has been saved."
+msgstr ""
+
+#: sections.admin.inc:162
+msgid "Delete section %name"
+msgstr ""
+
+#: sections.admin.inc:164
+msgid "Are you sure you want to delete the section %name?"
+msgstr ""
+
+#: sections.admin.inc:165;210
+msgid "Delete"
+msgstr ""
+
+#: sections.admin.inc:166
+msgid "Cancel"
+msgstr ""
+
+#: sections.admin.inc:172
+msgid "The section %name has been deleted."
+msgstr ""
+
+#: sections.admin.inc:199 sections.module:201
+msgid "System default"
+msgstr ""
+
+#: sections.admin.inc:206
+msgid "Edit"
+msgstr ""
+
+#: sections.admin.inc:216
+msgid "Save configuration"
+msgstr ""
+
+#: sections.admin.inc:229
+msgid "Section"
+msgstr ""
+
+#: sections.admin.inc:231
+msgid "Theme"
+msgstr ""
+
+#: sections.admin.inc:233
+msgid "Operations"
+msgstr ""
+
+#: sections.admin.inc:255
+msgid "No sections available."
+msgstr ""
+
+#: sections.module:15 sections.info:0
+msgid "Allows you to define sections of your site and apply themes to those sections."
+msgstr ""
+
+#: sections.module:92
+msgid "Theme configuration"
+msgstr ""
+
+#: sections.module:97
+msgid "This setting allows you to create a section per node. A node section will get the highest weight and take precedence about all other inheriting sections."
+msgstr ""
+
+#: sections.module:104
+msgid "Select the theme you want to use for this node. Disabled themes are not used until they are enabled on <a href=\"@url\">themes</a> page."
+msgstr ""
+
+#: sections.module:113
+msgid "The configuration options have been disabled for compatibility reasons with the sections module. Configure the administration theme via <a href=\"@sections-admin\">sections</a>."
+msgstr ""
+
+#: sections.module:203
+msgid "@name (@status)"
+msgstr ""
+
+#: sections.module:203
+msgid "Disabled"
+msgstr ""
+
+#: sections.module:28
+msgid "administer sections"
+msgstr ""
+
+#: sections.module:28
+msgid "assign node theme"
+msgstr ""
+
+#: sections.module:38 sections.info:0
+msgid "Sections"
+msgstr ""
+
+#: sections.module:39
+msgid "Define sections of your site and apply themes to them."
+msgstr ""
+
+#: sections.module:47
+msgid "List"
+msgstr ""
+
+#: sections.module:64
+msgid "Edit section"
+msgstr ""
+
+#: sections.module:72
+msgid "Delete section"
+msgstr ""
+

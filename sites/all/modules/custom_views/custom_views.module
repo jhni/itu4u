@@ -1,0 +1,35 @@
+<?php 
+// $Id: custom_views.module,v 1.272.2.1 2009/04/27 12:25:24 goba Exp $
+
+function custom_views_views_pre_execute(&$view) {
+
+
+	    global $user;
+		$CurrentUser = user_load($user->uid);
+		$mac = $CurrentUser->profile_mac;
+		$result = db_query("SELECT `location` FROM  {location_history} WHERE  `mac` =  '%s' ORDER BY  `timestamp` DESC LIMIT 0 , 1",strtolower($mac) );	
+		$location = "";
+
+		while($row = db_fetch_array($result)){		
+			$location = $row['location'];
+		}
+
+		if($view->name=="mobile_msg_stream")
+    	{
+     		$view->build_info['query']= 
+			"
+				SELECT DISTINCT(node.nid) AS nid, node_data_field_last.field_last_value AS node_data_field_last_field_last_value FROM node node  LEFT JOIN votingapi_cache votingapi_cache_node_points_vote_average ON node.nid = votingapi_cache_node_points_vote_average.content_id AND (votingapi_cache_node_points_vote_average.content_type = 'node' AND votingapi_cache_node_points_vote_average.value_type = 'points' AND votingapi_cache_node_points_vote_average.tag = 'vote' AND votingapi_cache_node_points_vote_average.function = 'average') LEFT JOIN content_type_airnote node_data_field_location ON node.vid = node_data_field_location.vid LEFT JOIN content_type_airnote node_data_field_last ON node.vid = node_data_field_last.vid WHERE (node.type in ('airnote')) AND (node.status <> 0 OR (node.uid = ***CURRENT_USER*** AND ***CURRENT_USER*** <> 0) OR ***ADMINISTER_NODES*** = 1) AND (node_data_field_location.field_location_value = '".$location."') GROUP BY nid ORDER BY node_data_field_last_field_last_value DESC			
+			";
+    
+    		//count_query determines the pager.  Do this so the right item count is returned. If you don't do this, you'll only return the query amount
+   			$view->build_info['count_query']=$view->build_info['query'];  	
+ 		}
+}
+
+/**
+* This module is Views 2.0 enabled.
+* Implementation of hook_views_api().
+*/
+function custom_views_views_api() {
+  return array('api' => 2.0);
+} 

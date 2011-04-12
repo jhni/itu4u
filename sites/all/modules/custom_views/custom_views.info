@@ -1,0 +1,6 @@
+; $Id$
+name = Custom Views
+description = Custom views query for this site.
+core = 6.x
+package = "ITU4U"
+version = "6.x-0.1-dev"

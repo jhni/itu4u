@@ -1,0 +1,6 @@
+; $Id$
+name = Location History
+description = Handles the locaiton events from eventbus
+core = 6.x
+package = "ITU4U"
+version = "6.x-0.1-dev"

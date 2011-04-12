@@ -1,0 +1,18 @@
+<?php
+// $Id: custom_views.install
+
+/**
+* Implementation of hook_install()
+*/
+function custom_views_install() {
+  // Set the module weight so it can override other modules.
+  db_query("UPDATE {system} SET weight = 99 WHERE name = 'custom_views'");
+}
+
+/**
+* Implementation of hook_uninstall()
+*/
+function custom_views_uninstall() {
+  // Remove the module from the system table
+  db_query("DELETE FROM {system} WHERE name = 'custom_views'");
+}

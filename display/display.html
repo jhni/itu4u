@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>AirNotes Public Display</title>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+        <link rel="stylesheet" href="style.css" type="text/css" />
+        <link type="text/css" rel="stylesheet" media="all" href="/airnotes/sites/all/modules/filefield/filefield.css?Y" />
+		<link type="text/css" rel="stylesheet" media="all" href="/airnotes/sites/all/modules/fivestar/css/fivestar.css?Y" />
+
+ 		<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+		<script type="text/javascript">
+				
+		var debug = null;
+		var macs_in_zone = new Array();
+	  	var notes_in_zone = new Array();
+		
+		$.fn.airnotesupdate = function(){
+			
+			$.getJSON("http://pit.itu.dk/airnotes/display/blip.php?jsoncallback=?",
+				function(devices){  
+						
+					// Clean nodes made by mac that has disappeared
+					var located = false;
+			
+					for(var i= 0; i<devices.length;i++){
+					
+						alert(devices[i]['terminal-id']);
+					
+						if(!devices[i]['terminal-id'] in macs_in_zone){
+							$("." + devices[i]['terminal-id']).fadeOut().remove();
+						}
+					}
+					
+			/*			$.each(macs_in_zone, function(i,oldmac){
+						located = false;			
+						
+						alert(oldmac);
+						$.each(macs_in_zone, function(i,newmac){	
+							if(oldmac = newmac['terminal-id']){located = true;}	
+						});	
+						
+						if(!located){
+							
+							$("." + oldmac).fadeOut().remove();
+						}else{delete macs_in_zone[oldmac];}
+					});
+			*/
+			
+					$.each(devices, function(i,mac){
+					
+						macs_in_zone[mac['terminal-id']] = null;
+													
+						$.getJSON("http://pit.itu.dk/airnotes/notes/json/"+mac['terminal-id'],
+							function(notes){	
+								$.each(notes, function(i,airnotes){
+									$.each(airnotes, function(i,airnote){	
+										debug = mac['terminal-id'];
+	
+										//Does the element exist ?
+										if($('#notes #'+ airnote.node.nid).length == 0){
+												
+											// Display nodes 											
+							 				var image = $('<div id="'+airnote.node.nid+'"><img src="'+airnote.node.Image+'" width="50%" align="middle" style="display:block;margin-right:auto;margin-left:auto;" />'+airnote.node.body+'<p>Posted by <b>'+ airnote.node.user_name+'</b></p><br/>'+ airnote.node.rating+'</div>').attr("class", "note " + mac['terminal-id']);
+						 					image.css("top", Math.floor(Math.random()*50+1)+"%").css("left", Math.floor(Math.random()*60+1)+"%");
+						 					var random = Math.floor(Math.random()*60+1)-30;
+						 					image.css("-moz-transform", "rotate("+random+"deg)");
+						 					image.css("-webkit-transform", "rotate("+random+"deg)");
+						 					image.css("-transform", "rotate("+random+"deg)");
+						 					image.hide().appendTo("#notes").fadeIn("slow");	
+					 					}
+					 				
+					 					if($('#users #'+ airnote.node.user_id).length == 0){	
+					 						$('<div id="'+ airnote.node.user_id +'">' + airnote.node.user_name + "</div>").attr("class", "name " + mac['terminal-id']).hide().appendTo("#users").fadeIn("slow");
+					 					}			 									
+									});					
+								});			
+						});
+					});	
+				});			 
+		};			  		
+				
+		// Update data every 3 sec.
+		$(document).everyTime(3000, function(i){
+		
+			//$.each($(".note"), function(i,v){$(v).addClass("scale");});
+			$(document).airnotesupdate();
+			//$(".note").toggleClass("scale",function(){ $(".note").toggleClass("scale");});
+		
+		}, 0);
+				 
+		</script>
+
+    </head>
+    <body> 
+		<h1>AirNotes Public Display</h1>
+    		
+       	<div id="users">
+       	</div>
+    
+        <div id="notes">  
+        </div>       
+        
+    </body>
+</html>

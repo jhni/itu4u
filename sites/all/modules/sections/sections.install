@@ -1,0 +1,286 @@
+<?php
+/* $Id: sections.install,v 1.10.2.11 2009/12/13 23:16:46 hass Exp $ */
+
+/**
+ * @file
+ * Installation file for Sections module.
+ */
+
+/**
+ * Implementation of hook_disable().
+ */
+function sections_disable() {
+  // Copy Administration theme section configuration into core Administration theme settings.
+  $admin_theme = db_fetch_object(db_query("SELECT status, path, theme FROM {sections_data} WHERE name = '%s'", 'Administration theme'));
+
+  // Enable selected core admin theme only if sections admin theme was enabled,
+  // otherwise use "system default".
+  if ($admin_theme->status) {
+    // Set core admin theme to sections admin theme.
+    variable_set('admin_theme', $admin_theme->theme);
+
+    // Enable core admin theme on node/add and node/*/edit pages if enabled.
+    $paths = preg_split('/(\r\n?|\n)/', $admin_theme->path);
+    if (in_array('node/add', $paths) && in_array('node/*/edit', $paths)) {
+      variable_set('node_admin_theme', '1');
+    }
+  }
+}
+
+/**
+ * Implementation of hook_enable().
+ */
+function sections_enable() {
+  // Copy core Administration theme configuration into Administration theme section and disable core Administration theme settings.
+  $admin_theme = variable_get('admin_theme', '0');
+  $node_admin_theme = variable_get('node_admin_theme', '0');
+  $path = $node_admin_theme ? "admin\nadmin/*\nnode/add\nnode/*/edit" : "admin\nadmin/*";
+  db_query("UPDATE {sections_data} SET status = %d, theme = '%s', path = '%s' WHERE name = '%s'", $admin_theme ? 1 : 0, $admin_theme, $path, 'Administration theme');
+  variable_set('admin_theme', '0');
+  variable_set('node_admin_theme', '0');
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function sections_install() {
+  drupal_install_schema('sections');
+
+  // Set module weight to negative value to be the first called.
+  db_query("UPDATE {system} SET weight = '-10' WHERE name = 'sections'");
+
+  // Create core Administration theme as section and copy settings over.
+  $admin_theme = variable_get('admin_theme', '0');
+  $node_admin_theme = variable_get('node_admin_theme', '0');
+  $path = $node_admin_theme ? "admin\nadmin/*\nnode/add\nnode/*/edit" : "admin\nadmin/*";
+  db_query("INSERT INTO {sections_data} (name, status, visibility, path, theme, weight) VALUES ('%s', %d, %d, '%s', '%s', %d)", 'Administration theme', $admin_theme ? 1 : 0, 1, $path, $admin_theme, -10);
+  variable_set('admin_theme', '0');
+  variable_set('node_admin_theme', '0');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function sections_uninstall() {
+  drupal_uninstall_schema('sections');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function sections_schema() {
+  $schema['sections_data'] = array(
+    'description' => 'Stores section settings.',
+    'fields' => array(
+      'sid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique section ID.',
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The name of this section.',
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'Section enabled status. (1 = enabled, 0 = disabled)',
+      ),
+      'path' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'description' => 'Internal path or URL alias with or without placeholders this section will apply (relative to Drupal root.)',
+      ),
+      'theme' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The theme under which the section settings apply.'
+      ),
+      'visibility' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'Flag to indicate how to show sections on pages. (0 = Show on all pages except listed pages, 1 = Show only on listed pages, 2 = Use custom PHP code to determine visibility)',
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Section weight within sections.',
+      )
+    ),
+    'primary key' => array('sid')
+  );
+
+  $schema['sections_roles'] = array(
+    'description' => 'Sets up access permissions for sections based on user roles',
+    'fields' => array(
+      'rid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => "The user's role ID from {users_roles}.rid.",
+      ),
+      'sid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => "The section's ID from {sections_data}.sid.",
+      ),
+    ),
+    'primary key' => array(
+      'rid',
+      'sid',
+    ),
+    'indexes' => array(
+      'rid' => array('rid'),
+    ),
+  );
+
+  $schema['sections_nodes'] = array(
+    'description' => 'Stores node themes',
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => "The node ID from {node}.nid.",
+      ),
+      'theme' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The theme under which the node settings apply.'
+      ),
+    ),
+    'primary key' => array(
+      'nid',
+    ),
+  );
+
+  return $schema;
+}
+
+function sections_update_3() {
+  $ret = array();
+  db_change_field($ret, 'sections_data', 'sid', 'sid', array('type' => 'serial', 'not null' => TRUE));
+  db_change_field($ret, 'sections_data', 'name', 'name', array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''));
+  db_change_field($ret, 'sections_data', 'status', 'status', array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'size' => 'tiny'));
+  db_change_field($ret, 'sections_data', 'template', 'theme', array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''));
+  db_change_field($ret, 'sections_data', 'visibility', 'visibility', array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'size' => 'tiny'));
+  db_change_field($ret, 'sections_data', 'weight', 'weight', array('type' => 'int', 'not null' => TRUE, 'default' => 0));
+  return $ret;
+}
+
+function sections_update_4() {
+  // Set module weight to negative value to be the first called.
+  $ret[] = update_sql("UPDATE {system} SET weight = '-10' WHERE name = 'sections'");
+  return $ret;
+}
+
+/**
+ * Add sections per roles feature.
+ */
+function sections_update_6000() {
+
+  $schema['sections_roles'] = array(
+    'description' => 'Sets up access permissions for sections based on user roles',
+    'fields' => array(
+      'rid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => "The user's role ID from {users_roles}.rid.",
+      ),
+      'sid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => "The section's ID from {sections_data}.sid.",
+      ),
+    ),
+    'primary key' => array(
+      'rid',
+      'sid',
+    ),
+    'indexes' => array(
+      'rid' => array('rid'),
+    ),
+  );
+
+  db_create_table($ret, 'sections_roles', $schema['sections_roles']);
+  return $ret;
+}
+
+/**
+ * Clear menu cache for menu changes (commit #109196).
+ */
+function sections_update_6001() {
+  $ret = array();
+  cache_clear_all();
+  menu_rebuild();
+  return $ret;
+}
+
+/**
+ * Add section per node sections feature.
+ */
+function sections_update_6002() {
+  $ret = array();
+
+  $schema['sections_nodes'] = array(
+    'description' => 'Stores node themes',
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => "The node ID from {node}.nid.",
+      ),
+      'theme' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The theme under which the node settings apply.'
+      ),
+    ),
+    'primary key' => array(
+      'nid',
+    ),
+  );
+
+  db_create_table($ret, 'sections_nodes', $schema['sections_nodes']);
+  return $ret;
+}
+
+/**
+ * Add "administration theme" to sections and disable core "administration theme".
+ */
+function sections_update_6003() {
+  $ret = array();
+
+  $admin_theme = variable_get('admin_theme', '0');
+  $node_admin_theme = variable_get('node_admin_theme', '0');
+  $path = $node_admin_theme ? "admin\nadmin/*\nnode/add\nnode/*/edit" : "admin\nadmin/*";
+  $admin_theme_name = 'Administration theme';
+
+  $result = db_result(db_query("SELECT name FROM {sections_data} WHERE name = '%s'", $admin_theme_name));
+  if (!$result) {
+    db_query("INSERT INTO {sections_data} (name, status, visibility, path, theme, weight) VALUES ('%s', %d, %d, '%s', '%s', %d)", 'Administration theme', $admin_theme ? 1 : 0, 1, $path, $admin_theme, -10);
+    $ret[] = array('success' => TRUE, 'query' => 'Added Administration theme section.');
+  }
+  variable_set('admin_theme', '0');
+  variable_set('node_admin_theme', '0');
+
+  return $ret;
+}

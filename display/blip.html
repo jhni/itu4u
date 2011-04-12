@@ -1,0 +1,32 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Untitled Document</title>
+
+<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+
+<script type="text/javascript">
+    // wait for the DOM to be loaded then start polling for conversion status
+	var blipdata ="";
+    $(document).ready(function() {
+        var getConvertStatus = function(){
+            console.log('getting some status');
+			$.getJSON("http://pit.itu.dk:7331/locations"+"&callback=?", function(data) {
+    			alert(data[0].location-id);
+			});
+        }
+        //setInterval(getConvertStatus, 3000);
+    });
+</script>
+
+</head>
+
+<body>
+
+<div id="debug">
+
+</div>
+
+</body>
+</html>

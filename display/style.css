@@ -1,0 +1,72 @@
+@charset "UTF-8";
+/* CSS Document */
+
+html, body, ul.thumb, ul.thumb li {
+    padding: 0;
+    margin: 0;
+}
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+	background: -webkit-gradient(radial, 45 45, 50, 50 10, 640, from(#444), to(#333)) !important;
+    background: #333;
+}
+
+h1 {
+	color:#FFF;
+	margin-left:3%;
+}
+
+#users {
+	list-style: none;
+	float:left;
+	width:12%;
+	height:100%;
+	margin-left:3%;
+}
+
+.name {
+	width:150px;
+	text-align:center;
+	line-height:30px;
+	background-color:#06F;
+	margin-bottom:10px;
+	-moz-border-radius: 5px; 
+	-webkit-border-radius: 5px;
+	font-size:18px;
+	color:#FFF;
+}
+
+#notes {
+    position: relative;
+	float:right;
+	width:85%;
+	height:100%;
+}
+
+.note  {
+	/* Create white frame */
+	padding: 6px 6px 6px 6px;
+    background: #FFF;
+    -moz-box-shadow:1px 1px 6px #222;
+	-webkit-box-shadow:1px 1px 6px #222;
+	box-shadow:1px 1px 6px #222;
+	-moz-border-radius: 5px; 
+	-webkit-border-radius: 5px;
+    -webkit-transition: all 1s ease-in-out;
+    z-index: 0;
+	position:absolute;
+	width: 300px;
+}
+
+.note:hover{
+    z-index: 10!important;
+	
+	-webkit-transform: scale(1) !important;
+    -moz-transform: scale(1)!important;
+    -o-transform: scale(1)!important;
+	position:absolute!important;
+	top:10%!important;
+	left:20%!important;
+}

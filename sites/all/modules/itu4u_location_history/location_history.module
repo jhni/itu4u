@@ -1,0 +1,73 @@
+<?php
+// $Id$
+/**
+* @file
+* Public Display
+*/
+
+
+/*
+
+To-do:
+
+CREATE TABLE IF NOT EXISTS `location_history` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `mac` varchar(18) CHARACTER SET utf8 NOT NULL,
+  `location` varchar(25) CHARACTER SET utf8 NOT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `mac` (`mac`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+*/
+
+
+/*******************************************************************************
+* Renders the public display of airnotes
+******************************************************************************/
+/**
+* Valid permissions for this module
+* @return array An array of valid permissions for the public_display module
+*/
+
+function location_history_perm() {
+    return array('administer location_history', 'access location_history content');
+} // function location_history_perm()
+
+/**
+* Menu for this module
+* @return array An array with this module's settings.
+*/
+function location_history_menu() {
+    $items = array();
+    
+    //Link to the public_display admin page:
+    $items['lochis/add'] = array(
+        'title' => 'Add entry',
+		'description' => 'handels location events from eventbus',
+        'page callback' => 'location_history_add',
+        'access arguments' => array('access location_history content'),
+        'type' => MENU_NORMAL_ITEM,
+    );
+      
+    return $items; 
+}
+
+/**
+* add an entry to the location tabel
+* 
+*/
+function location_history_add() {
+
+	if( $_SERVER['REMOTE_ADDR'] == "127.0.0.1"){
+		$mac = $_POST['terminal.btmac'];
+		$zone= $_POST['zone.current'];
+		$bliptime = $_POST['timestamp'];
+		
+		db_query("INSERT INTO {location_history} (id, mac, location, timestamp,blip_time) VALUES (null, '%s', '%s', null, %i)", $mac, $zone,$bliptime);	
+	}else {
+		return $_SERVER['REMOTE_ADDR']." is not authorized to access this page.";
+	}
+}
+
+?>

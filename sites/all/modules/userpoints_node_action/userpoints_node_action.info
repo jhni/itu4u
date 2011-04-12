@@ -1,0 +1,15 @@
+; $Id: userpoints_node_action.info,v 1.1.6.1 2009/06/25 03:02:39 billymg Exp $
+
+name = Userpoints Node Action
+description = "Provides a customizable configuration to detract points from users for setting nodes to have certain options (published, sticky, promoted)."
+core = 6.x
+package = Userpoints
+dependencies[] = node
+dependencies[] = userpoints
+
+; Information added by drupal.org packaging script on 2009-10-11
+version = "6.x-1.4"
+core = "6.x"
+project = "userpoints_node_action"
+datestamp = "1255292793"
+

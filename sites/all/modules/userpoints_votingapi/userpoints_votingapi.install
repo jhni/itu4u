@@ -1,0 +1,18 @@
+<?php
+// $Id: userpoints_votingapi.install,v 1.1.2.1 2008/03/29 02:14:46 kmillecam Exp $
+
+/**
+* Implementation of hook_install().
+*/
+function userpoints_votingapi_install() {
+  drupal_set_message(t('User Points Voting API has been successfully installed.'));
+  drupal_set_message(t('You can configure the User Points Voting API module on the <a href="@url">User Points settings page</a>.', array('@url' => url('admin/settings/userpoints'))));
+}
+
+
+/**
+* Implementation of hook_uninstall().
+*/
+function userpoints_votingapi_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name like '%userpoints_votingapi%'");
+}

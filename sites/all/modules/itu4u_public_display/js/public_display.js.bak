@@ -1,0 +1,119 @@
+
+/******
+
+Updates the AirNotes display on public displays. Must be run on either google chorme or safari
+
+*******/
+var macs_in_zone = new Array();
+var timer = 0;
+
+$.fn.airnotesupdate = function(){
+	
+	$.getJSON("http://pit.itu.dk/airnotes/sites/all/modules/public_display/php/blip.php?zone=" + blipzone +"&jsoncallback=?",
+		function(devices){  
+			
+			var located = false;
+			for(var i= 0; i<macs_in_zone.length;i++){
+				located = false;
+				for(var j= 0; j<devices.length;j++){	
+					
+					if(devices[j]['terminal-id'] == macs_in_zone[i]){
+						located = true;
+						break;
+					}
+				}
+
+				if(!located){
+					$("." + macs_in_zone[i]).fadeOut(1500, function(){$(this).remove();});
+				}
+			}
+	
+			// Reset macs_in_zone
+			macs_in_zone = new Array();
+			
+			$.each(devices, function(i,mac){
+			
+				macs_in_zone.push(mac['terminal-id']);
+											
+				$.getJSON("http://pit.itu.dk/airnotes/notes/json/"+mac['terminal-id'],
+					function(notes){	
+						$.each(notes, function(i,airnotes){
+							$.each(airnotes, function(i,airnote){	
+							
+								//Does the element exist ?
+								if($('#notes #'+ airnote.node.nid).length == 0){
+										
+									// Display nodes 		
+									
+					 				//OLD var image = $('<div id="'+airnote.node.nid+'"><img src="'+airnote.node.Image+'" width="50%" align="middle" style="display:block;margin-right:auto;margin-left:auto;" />'+airnote.node.body+'<p>Posted by <b>'+ airnote.node.user_name+'</b></p><br/>'+ airnote.node.rating+'</div>').attr("class", "note " + mac['terminal-id']);
+				 					
+				 					var image = $('<div id="'+airnote.node.nid+'"><div class="container"><div class="content"><span>'+airnote.node.body+'</span></div><div class="author">Posted by <b>'+ airnote.node.user_name+'</b><br/>'+ airnote.node.rating+'</div></div></div>').attr("class", "note " + mac['terminal-id']);
+				 								
+				 					// Positioning in the upper, lower, right or left rim
+				 					var rim  = Math.floor(Math.random()*4+1);		
+				 					switch(rim)
+									{
+										// Upper rim 
+										case 1:
+  										image.css("top", Math.floor(Math.random()*15+1-10)+"%").css("left", Math.floor(Math.random()*90+1)+"%");
+  										break;
+  										
+										// Lower rim 
+										case 2:
+  										image.css("top", Math.floor(Math.random()*15+1+75)+"%").css("left", Math.floor(Math.random()*90+1)+"%");
+  										break;
+  										
+										// Left rim 
+										case 3:
+  										image.css("top", Math.floor(Math.random()*90+1)+"%").css("left", Math.floor(Math.random()*15+1-10)+"%");
+  										break;
+  										
+										// Right rim 
+										case 4:
+  										image.css("top", Math.floor(Math.random()*100+1)+"%").css("left", Math.floor(Math.random()*15+1+75)+"%");
+  										break;
+  										
+										// default right rim 
+										default:
+  										image.css("top", Math.floor(Math.random()*100+1)+"%").css("left", Math.floor(Math.random()*25+1+75)+"%");
+									}
+				 					
+				 					// Assign random color ( debuging )
+				 					var col = 'rgb(' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ')';
+				 					image.css("backgroundColor",col);
+				 					
+				 					// Rotate and scale
+				 					var random = Math.floor(Math.random()*60+1)-30;
+				 					image.css("-webkit-transform", "rotate("+random+"deg) scale(0.4)");
+				 					
+				 					// Add the note Debug max 60 notes
+				 					if( $(".note").length < 60 ) {
+				 						image.hide().appendTo("body").fadeIn("slow");	 					
+				 					}
+				 					
+				 					
+				 					// Slideshow
+				 					var d=new Date();
+				 					if( d.getTime()-timer > 10000 ){
+				 						//alert(d.getTime() + " " + timer);
+				 						// Debug Show Random element
+				 						$(".HighLight").toggleClass('HighLight',3000);
+				 						var index = Math.ceil(Math.random()*$(".note").length);  //nth-child indexes start at 1
+				 						
+										$(".note:nth-child(" + index + ")").toggleClass('HighLight',3000);
+				 						timer = d.getTime();
+				 					}				 					
+			 					}			 					
+							});					
+						});			
+				});
+			});	
+		});			 
+};
+
+/******
+
+ Update data every 3 sec.
+
+*******/
+$(document).everyTime(3000, function(i){$(document).airnotesupdate();}, 0);
